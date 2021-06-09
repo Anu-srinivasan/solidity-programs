@@ -1,0 +1,85 @@
+pragma solidity ^0.8.0;
+    abstract contract  Token_ERC20{
+    function totalSupply()  external virtual  returns (uint _totalSupply);
+    function  balanceOf(address _owner) external virtual  returns (uint balance);
+    function transfer(address _to, uint _value) external virtual  returns (bool success);
+    function transferFrom(address _from, address _to, uint _value) virtual  external  returns (bool success);
+    function approve (address _spender, uint _value) external virtual  returns (bool success);
+    function allowance(address _owner, address _spender) virtual external returns (uint remittance);
+    event Transfer(address indexed _from, address indexed _to, uint _value);
+    event Approval (address indexed _owner, address indexed _spender, uint _value);
+}
+ 
+    contract MyFirstToken is Token_ERC20{
+    string public constant symbol ="MFT";
+    string public constant name ="My First Token";
+    uint public constant decimals=18;
+    uint public constant __totalSupply=1000000000000;
+    address payable public  fundsWallet;
+    uint public constant oneEthCanBuy=10;
+    uint public totalEthinWei;
+    mapping(address=>uint) public __balanceOf;
+    mapping (address=> mapping(address =>uint)) private _allowances;
+    constructor () public {
+       
+                __balanceOf[msg.sender] = __totalSupply;
+    fundsWallet=payable(msg.sender);
+    }
+ 
+   function totalSupply() public  override view returns (uint _totalSupply) {
+       _totalSupply=__totalSupply;
+   }
+ 
+    function  balanceOf(address addr) public   override returns (uint balance) {
+        return __balanceOf[addr];
+ 
+    }
+    function transfer(address _to, uint _value) public override returns (bool success){
+        if(_value>0 && _value<=balanceOf(msg.sender)){
+        __balanceOf[msg.sender]-=_value;
+        __balanceOf[_to]+=_value;
+       emit Transfer(msg.sender, _to, _value) ;
+       return true;
+    }
+    return false;
+    }
+ 
+   function transferFrom(address _from, address _to, uint _value) override public returns (bool success){
+ 
+    if (_allowances[_from][msg.sender] > 0 &&
+            _value > 0 &&
+            _allowances[_from][msg.sender] >= _value && 
+            __balanceOf[_from] >= _value) {
+            __balanceOf[_from] -= _value;
+            __balanceOf[_to] += _value;
+
+            _allowances[_from][msg.sender] -= _value;
+            return true;
+        }
+        return false;
+ 
+   }
+    function approve (address _spender, uint _value) override public returns (bool success){
+           _allowances[msg.sender][_spender]=_value;
+           emit Approval(msg.sender,_spender,_value);
+           return true;
+ 
+    }
+    function allowance(address _owner, address _spender) public override returns (uint remittance){
+        return _allowances[_owner][_spender];
+    }
+ 
+ 
+  receive () external payable {
+        //This is a fall back function
+        totalEthinWei=totalEthinWei+msg.value;
+        //address payable fundsWallet;
+        uint amount= msg.value*oneEthCanBuy;
+        require(__balanceOf[fundsWallet]>=amount);
+        __balanceOf[msg.sender]=__balanceOf[msg.sender]+amount;
+        emit Transfer(fundsWallet,msg.sender,amount);
+       fundsWallet.transfer(msg.value);
+ 
+    }
+}
+ 
